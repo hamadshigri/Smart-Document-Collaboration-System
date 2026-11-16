@@ -54,6 +54,9 @@ export default function RichTextEditor() {
   const [originalContent, setOriginalContent] = useState("");
   const socketRef = useRef(null);
   const isJoinedRef = useRef(false);
+  const debounceTimerRef = useRef(null);
+  const pendingUpdateRef = useRef(null);
+
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -111,6 +114,11 @@ export default function RichTextEditor() {
     socket.connect();
 
     return () => {
+      flushPendingUpdate();
+      if(debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
       socket.off("connect", handleConnect);
       socket.off("document-changed", handleDocumentChanged);
       socket.disconnect();
@@ -121,7 +129,7 @@ export default function RichTextEditor() {
   }, [id, token]);
 
 
-  const handleContentChange = (value, delta, source, editor) => {
+  const handleContentChange = (value, delta, source) => {
     setContent(value);
 
     if (source !== "user") return;
@@ -130,18 +138,19 @@ export default function RichTextEditor() {
 
     if (!isJoinedRef.current) return;
 
-    socketRef.current?.emit(
-      "document-update",
-      {
-        documentId: id,
-        content: value
-      },
-      (response) => {
-        if (!response?.success) {
-          console.log("Document update failed:", response?.message);
-        }
-      }
-    )
+    pendingUpdateRef.current = {
+      documentId: id,
+      content: value,
+    }
+
+    if(debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      sendPendingUpdate();
+    }, 500)
   }
 
 
@@ -218,7 +227,7 @@ export default function RichTextEditor() {
           enter: {
             key: 'Enter',
             handler: function (range, context) {
-              const formats = quill.getFormat(range);
+              const formats = this.quill.getFormat(range);
 
               this.quill.insertText(range.index, '\n', 'user');
 
@@ -347,6 +356,40 @@ export default function RichTextEditor() {
       window.removeEventListener("keydown", handleKeyDown);
   }, [id, title, content, token, role, saving, loading]);
 
+
+  const sendPendingUpdate = () => {
+    const pendingUpdate = pendingUpdateRef.current;
+
+    if(!pendingUpdate) return;
+
+    const socket = socketRef.current;
+
+    if(!socket?.connected || !isJoinedRef.current) {
+      console.log("Socket is not ready. Update remains pending. ");
+      return;
+    }
+
+    pendingUpdateRef.current = null;
+
+    console.log("Sending update:", pendingUpdate.content);
+
+    socket.emit("document-update", pendingUpdate, (response) => {
+      if(!response.success) {
+        console.log("Document update failed:", response.message);
+      } else {
+        console.log("Document saved successfully");
+      }
+    })
+  }
+
+  const flushPendingUpdate = () => {
+    if(debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    sendPendingUpdate();
+  }
+
   return (
     <>
 
@@ -414,6 +457,7 @@ export default function RichTextEditor() {
                 theme="snow"
                 value={content}
                 onChange={handleContentChange}
+                onBlur={flushPendingUpdate}
                 modules={modules}
                 formats={formats}
                 readOnly={role === "viewer"}

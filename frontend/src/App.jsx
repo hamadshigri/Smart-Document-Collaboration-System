@@ -28,27 +28,29 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const App = () => {
+const AppRoutes = () => {
+  // Subscribe to router changes so auth is re-read after login/logout navigation.
+  useLocation();
 
-    const token = localStorage.getItem("token");
-
-    const isAuth = token && !isTokenExpired(token);
+  const token = localStorage.getItem("token");
+  const isAuth = token && !isTokenExpired(token);
 
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/register" element={isAuth ? <Navigate to="/" replace/> : <Register />} />
-          <Route path="/login" element={isAuth ? <Navigate to="/" replace/> :  <Login />} />
-          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/document" element={<ProtectedRoute><Document /></ProtectedRoute>} />
-          <Route path="/document/:id" element={<ProtectedRoute><Document /></ProtectedRoute>} />
-          <Route path="/invitations/:id" element={<ProtectedRoute><InvitationPage /></ProtectedRoute>} />
-        </Routes>
-      </BrowserRouter>
+    <Routes>
+      <Route path="/register" element={isAuth ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/login" element={isAuth ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/document" element={<ProtectedRoute><Document /></ProtectedRoute>} />
+      <Route path="/document/:id" element={<ProtectedRoute><Document /></ProtectedRoute>} />
+      <Route path="/invitations/:id" element={<ProtectedRoute><InvitationPage /></ProtectedRoute>} />
+    </Routes>
+  );
+};
 
-    </>
-  )
-}
+const App = () => (
+  <BrowserRouter>
+    <AppRoutes />
+  </BrowserRouter>
+);
 
 export default App

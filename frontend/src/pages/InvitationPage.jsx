@@ -134,9 +134,9 @@ const InvitationPage = () => {
           </div>
           {invitation.status === "pending" && (
             <div className="flex gap-3 mt-6">
-              <button onClick={handleAccept} disabled={actionLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg disabled:opacity-50">{actionLoading ? "Please wait..." : "Accept Invitation"}</button>
+              <button onClick={handleAccept} disabled={actionLoading} className="flex-1 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg disabled:opacity-50">{actionLoading ? "Please wait..." : "Accept Invitation"}</button>
 
-              <button onClick={handleReject} disabled={actionLoading} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg disabled:opacity-50">Reject</button>
+              <button onClick={handleReject} disabled={actionLoading} className="flex-1 cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg disabled:opacity-50">Reject</button>
             </div>
           )}
 

@@ -1,15 +1,17 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import Navbar from "../components/Navbar"
 import { register } from "../lib/user";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import HeroText from "../components/HeroText";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Register = () => {
 
     const nameRef = useRef(null);
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const registerNotify = () => toast("User Registered Successfully!");
 
@@ -41,7 +43,24 @@ const Register = () => {
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center border border-gray-400 rounded-md p-8">
                         <input type="text" ref={nameRef} placeholder="Enter your name" className="rounded border border-gray-500 p-2" />
                         <input type="email" ref={emailRef} placeholder="Enter your email" className="rounded border border-gray-500 p-2" />
-                        <input type="password" ref={passwordRef} placeholder="Enter your password" className="rounded border border-gray-500 p-2" />
+                        <div className="flex justify-between rounded border border-gray-500 pr-1">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                ref={passwordRef}
+                                placeholder="Enter your password"
+                                className="p-2 w-full focus:outline-none"
+                                required
+                                aria-label="Password"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((visible) => !visible)}
+                                className="cursor-pointer px-2"
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                            >
+                                {showPassword ? <FaEye /> : <FaEyeSlash />}
+                            </button>
+                        </div>
                         <button type="submit" className="bg-[#3186FF] hover:bg-[#3186ffb8] text-white cursor-pointer text-xl p-2 font-bold rounded-md">Register</button>
                         <p className="text-center">Already have an Account? <Link to="/login" className="text-[#3186FF] font-bold">Login</Link></p>
                     </form>

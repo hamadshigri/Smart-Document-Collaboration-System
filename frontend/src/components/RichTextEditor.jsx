@@ -249,6 +249,8 @@ export default function RichTextEditor() {
       return;
     }
 
+    let active = true;
+
     const loadDocument = async () => {
       setReadyDocumentId(null);
       setYjsSyncedDocumentId(null);
@@ -258,6 +260,7 @@ export default function RichTextEditor() {
 
       try {
         const response = await getDocumentById(id, token);
+        if (!active) return;
         const document = response.data.document;
 
         setTitle(document.title ?? "Untitled document");
@@ -267,17 +270,28 @@ export default function RichTextEditor() {
         setRole(response.data.role);
         setReadyDocumentId(id);
       } catch (error) {
+        if (!active) return;
+
+        if (error.response?.status === 404) {
+          toast.info("That document was deleted or is no longer available.");
+          navigate("/", { replace: true });
+          return;
+        }
+
         setError(
           error.response?.data?.message ??
           "Could not load the document"
         );
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     loadDocument();
-  }, [id, token]);
+    return () => {
+      active = false;
+    };
+  }, [id, token, navigate]);
 
 
   useEffect(() => {
@@ -512,9 +526,13 @@ export default function RichTextEditor() {
         )}
 
         {loading ? (
-          <p className="text-center p-5">
-            Loading document...
-          </p>
+          <div
+            className="flex min-h-[70vh] items-center justify-center"
+            role="status"
+            aria-label="Loading document"
+          >
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+          </div>
         ) : (
           <>
             <header className="document-header">

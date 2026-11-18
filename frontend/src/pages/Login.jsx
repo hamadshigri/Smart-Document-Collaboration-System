@@ -1,11 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import { login } from "../lib/user";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import HeroText from "../components/HeroText";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useState } from "react";
 
 
 const Login = () => {
@@ -13,12 +12,18 @@ const Login = () => {
     const passwordRef = useRef(null);
 
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isSubmittingRef = useRef(false);
 
     const navigate = useNavigate();
     const location = useLocation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmittingRef.current) return;
+
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
 
         const email = emailRef.current.value;
         const password = passwordRef.current.value;
@@ -48,12 +53,15 @@ const Login = () => {
                 error.response?.data?.message || "Login failed!"
             );
             console.log(error);
+        } finally {
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
         }
     };
 
     return (
         <>
-            <Navbar />
+            <Navbar hideLoginButton />
 
             <div className="flex justify-center items-center h-[70vh] gap-4">
                 <HeroText />
@@ -90,9 +98,10 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            className="bg-[#3186FF] hover:bg-[#3186ffb8] text-white cursor-pointer text-xl p-2 font-bold rounded-md"
+                            disabled={isSubmitting}
+                            className="bg-[#3186FF] hover:bg-[#3186ffb8] text-white cursor-pointer text-xl p-2 font-bold rounded-md disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            Login
+                            {isSubmitting ? "Logging in..." : "Login"}
                         </button>
 
                         <p className="text-center">

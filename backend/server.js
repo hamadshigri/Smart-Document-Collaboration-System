@@ -9,6 +9,7 @@ import { connectDB } from "./config/db.js";
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
+  maxHttpBufferSize: 5_000_000,
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:5137",
     methods: ["GET", "POST"],

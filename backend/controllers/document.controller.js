@@ -97,7 +97,7 @@ export const updateDocument = async (req, res) => {
       });
     }
 
-    if (typeof content !== "string") {
+    if (content !== undefined && typeof content !== "string") {
       return res.status(400).json({
         success: false,
         message: "Invalid document content",
@@ -105,7 +105,9 @@ export const updateDocument = async (req, res) => {
     }
 
     req.document.title = title.trim();
-    req.document.content = content;
+    if (content !== undefined) {
+      req.document.content = content;
+    }
 
     const updatedDocument = await req.document.save();
 

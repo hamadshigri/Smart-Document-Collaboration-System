@@ -15,6 +15,8 @@ import { toast } from "react-toastify";
 import ShareModal from "./ShareModal";
 import { FaShareFromSquare } from "react-icons/fa6";
 import { createSocketConnection } from "../socket/socket";
+import * as Y from "yjs";
+import { QuillBinding } from "y-quill";
 
 
 const SizeStyle = Quill.import("attributors/style/size");
@@ -42,6 +44,25 @@ const formats = [
   "blockquote",
 ];
 
+const encodeYjsUpdate = (update) => {
+  let binary = "";
+  for (const byte of update) binary += String.fromCharCode(byte);
+  return window.btoa(binary);
+};
+
+const decodeYjsUpdate = (encoded) => {
+  if (typeof encoded !== "string") {
+    throw new Error("The server sent an invalid Yjs update");
+  }
+
+  const binary = window.atob(encoded);
+  const update = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    update[index] = binary.charCodeAt(index);
+  }
+  return update;
+};
+
 export default function RichTextEditor() {
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("Untitled document");
@@ -51,11 +72,17 @@ export default function RichTextEditor() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
-  const [originalContent, setOriginalContent] = useState("");
+  const [readyDocumentId, setReadyDocumentId] = useState(null);
+  const [yjsSyncedDocumentId, setYjsSyncedDocumentId] = useState(null);
+
+
   const socketRef = useRef(null);
   const isJoinedRef = useRef(false);
-  const debounceTimerRef = useRef(null);
-  const pendingUpdateRef = useRef(null);
+  const roleRef = useRef(role);
+  const quillRef = useRef(null);
+  const ydocRef = useRef(null);
+  const ytextRef = useRef(null);
+  const bindingRef = useRef(null);
 
 
   const navigate = useNavigate();
@@ -63,14 +90,17 @@ export default function RichTextEditor() {
 
   const token = localStorage.getItem("token");
 
+  useEffect(() => {
+    roleRef.current = role;
+  }, [role]);
+
   const addNotify = () => toast("Document Saved!");
-  const updateNotify = () => toast("Document Updated!");
   const emptyNotify = () =>
     toast("Please add text in the title or content");
 
 
   useEffect(() => {
-    if (!token || !id) {
+    if (!token || !id || readyDocumentId !== id) {
       return;
     }
     const socket = createSocketConnection(token);
@@ -78,30 +108,96 @@ export default function RichTextEditor() {
     socketRef.current = socket;
 
     const handleConnect = () => {
-      console.log("Socket connected:", socket.id);
-
       isJoinedRef.current = false;
 
       socket.emit("join-document", id, (response) => {
-        if (response.success) {
-          isJoinedRef.current = true;
-          console.log("Joined document:", response);
-        } else {
-          console.log("Failed to join:", response.message);
+        if (!response?.success) {
+          const message = response?.message || "Could not join the live document";
+          console.error(message);
+          setError(message);
+          return;
         }
-      })
-    }
 
+        isJoinedRef.current = true;
+        setRole(response.role);
 
-    const handleDocumentChanged = (data) => {
-      if (data.documentId !== id) return;
+        const ydoc = ydocRef.current;
+        const ytext = ytextRef.current;
+        if (!ydoc || !ytext) return;
 
-      setContent(data.content);
+        try {
+          Y.applyUpdate(ydoc, decodeYjsUpdate(response.state), "socket");
+
+          if (response.shouldSeed) {
+            const quill = quillRef.current.getEditor();
+            const initialDelta = quill.clipboard.convert({
+              html: response.initialContent || "",
+              text: "",
+            });
+
+            ytext.applyDelta(initialDelta.ops);
+            socket.emit(
+              "seed-document",
+              {
+                documentId: id,
+                update: encodeYjsUpdate(Y.encodeStateAsUpdate(ydoc)),
+                content: quill.root.innerHTML,
+              },
+              (seedResponse) => {
+                if (seedResponse?.success) {
+                  setYjsSyncedDocumentId(id);
+                } else {
+                  const message = seedResponse?.message || "Could not initialize document";
+                  console.error(message);
+                  setError(message);
+                }
+              },
+            );
+          } else if (response.seeded) {
+            setYjsSyncedDocumentId(id);
+          }
+        } catch (error) {
+          console.error("Could not read the shared document state:", error);
+          setError("Could not sync the document. Reload the page and try again.");
+        }
+      });
+    };
+
+    const handleDocumentSync = (data) => {
+      if (data.documentId !== id || !ydocRef.current) return;
+      try {
+        Y.applyUpdate(ydocRef.current, decodeYjsUpdate(data.state), "socket");
+        setYjsSyncedDocumentId(id);
+        if (quillRef.current) {
+          setContent(quillRef.current.getEditor().root.innerHTML);
+        }
+      } catch (error) {
+        console.error("Could not apply shared document state:", error);
+        setError("Could not sync the document. Reload the page and try again.");
+      }
+    };
+
+    const handleYjsUpdate = (data) => {
+      if (data.documentId !== id || !ydocRef.current) return;
+      try {
+        Y.applyUpdate(ydocRef.current, decodeYjsUpdate(data.update), "socket");
+        if (quillRef.current) {
+          const html = quillRef.current.getEditor().root.innerHTML;
+          setContent(html);
+          if (roleRef.current !== "viewer") {
+            socket.emit("document-content", { documentId: id, content: html });
+          }
+        }
+      } catch (error) {
+        console.error("Could not apply collaborative update:", error);
+        setError("A live update could not be applied. Reload the document.");
+      }
     };
 
     socket.on("connect", handleConnect);
 
-    socket.on("document-changed", handleDocumentChanged);
+    socket.on("document-sync", handleDocumentSync);
+    socket.on("yjs-update", handleYjsUpdate);
 
     socket.on("disconnect", () => {
       isJoinedRef.current = false;
@@ -109,58 +205,53 @@ export default function RichTextEditor() {
 
     socket.on("connect_error", (error) => {
       console.log("Socket authentication failed:", error.message);
+      setError(`Realtime connection failed: ${error.message}`);
     });
 
     socket.connect();
 
     return () => {
-      flushPendingUpdate();
-      if(debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
       socket.off("connect", handleConnect);
-      socket.off("document-changed", handleDocumentChanged);
+      socket.off("document-sync", handleDocumentSync);
+      socket.off("yjs-update", handleYjsUpdate);
       socket.disconnect();
 
       socketRef.current = null;
       isJoinedRef.current = false;
     }
-  }, [id, token]);
+  }, [id, token, readyDocumentId]);
+
+  useEffect(() => {
+    const ydoc = new Y.Doc();
+    const ytext = ydoc.getText("quill");
+
+    ydocRef.current = ydoc;
+    ytextRef.current = ytext;
+
+    return () => {
+      ydoc.destroy();
+
+      ydocRef.current = null;
+      ytextRef.current = null;
+    }
+
+  }, [id])
 
 
-  const handleContentChange = (value, delta, source) => {
+  const handleContentChange = (value) => {
     setContent(value);
-
-    if (source !== "user") return;
-
-    if (!id || role === "viewer") return;
-
-    if (!isJoinedRef.current) return;
-
-    pendingUpdateRef.current = {
-      documentId: id,
-      content: value,
-    }
-
-    if(debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      debounceTimerRef.current = null;
-      sendPendingUpdate();
-    }, 500)
   }
-
-
   useEffect(() => {
     if (!id) {
       setRole("owner");
+      setReadyDocumentId("new-document");
+      setYjsSyncedDocumentId("new-document");
       return;
     }
 
     const loadDocument = async () => {
+      setReadyDocumentId(null);
+      setYjsSyncedDocumentId(null);
       setLoading(true);
       setError("");
       setRole("");
@@ -173,9 +264,8 @@ export default function RichTextEditor() {
         setContent(document.content ?? "");
 
         setOriginalTitle(document.title ?? "Untitled document");
-        setOriginalContent(document.content ?? "");
-
         setRole(response.data.role);
+        setReadyDocumentId(id);
       } catch (error) {
         setError(
           error.response?.data?.message ??
@@ -188,6 +278,65 @@ export default function RichTextEditor() {
 
     loadDocument();
   }, [id, token]);
+
+
+  useEffect(() => {
+    const expectedId = id ?? "new-document";
+
+    if (readyDocumentId !== expectedId) return;
+    if (id && yjsSyncedDocumentId !== id) return;
+    if (!quillRef.current || !ydocRef.current || !ytextRef.current) return;
+
+    const quill = quillRef.current.getEditor();
+    const ydoc = ydocRef.current;
+    const ytext = ytextRef.current;
+
+    // Unsaved documents have no server session yet, so seed their local Yjs
+    // text from Quill. Saved documents are seeded by the first socket editor.
+    if (!id && ytext.length === 0) {
+      ydoc.transact(() => ytext.applyDelta(quill.getContents().ops), "initial-local-content");
+    }
+
+    const binding = new QuillBinding(ytext, quill);
+    bindingRef.current = binding;
+
+    return () => {
+      binding.destroy();
+      bindingRef.current = null;
+    };
+  }, [id, readyDocumentId, yjsSyncedDocumentId]);
+
+  useEffect(() => {
+    if (!id || yjsSyncedDocumentId !== id || role === "viewer") return;
+
+    const ydoc = ydocRef.current;
+    const socket = socketRef.current;
+    if (!ydoc || !socket?.connected || !isJoinedRef.current) return;
+
+    const handleLocalUpdate = (update, origin) => {
+      if (origin === "socket") return;
+      if (!socket.connected || !isJoinedRef.current || !quillRef.current) return;
+
+      socket.emit(
+        "yjs-update",
+        {
+          documentId: id,
+          update: encodeYjsUpdate(update),
+          content: quillRef.current.getEditor().root.innerHTML,
+        },
+        (response) => {
+          if (!response?.success) {
+            console.error("Could not save collaborative update:", response?.message);
+            setError(response?.message || "Could not save collaborative update");
+          }
+        },
+      );
+    };
+
+    ydoc.on("update", handleLocalUpdate);
+    return () => ydoc.off("update", handleLocalUpdate);
+  }, [id, role, yjsSyncedDocumentId]);
+
 
   const modules = useMemo(
     () => ({
@@ -301,10 +450,8 @@ export default function RichTextEditor() {
 
 
     const titleChanged = title.trim() !== originalTitle.trim();
-    const contentChanged = normalizeContent(content) !== normalizeContent(originalContent);
-
-    if (!titleChanged && !contentChanged) {
-      toast.info("No changes detected!");
+    if (!titleChanged) {
+      toast.info("Document content saves automatically while you edit.");
       return;
     }
 
@@ -312,17 +459,16 @@ export default function RichTextEditor() {
     setError("");
 
     try {
-      if (!title.trim() || !content.trim()) {
-        emptyNotify();
+      if (!title.trim()) {
+        toast.error("Document title cannot be empty.");
         return;
       }
 
-      await updateDocument(id, { title, content }, token);
+      await updateDocument(id, { title }, token);
 
       setOriginalTitle(title);
-      setOriginalContent(content);
 
-      updateNotify();
+      toast.success("Document title updated.");
     } catch (error) {
       setError(
         error.response?.data?.message ??
@@ -356,39 +502,6 @@ export default function RichTextEditor() {
       window.removeEventListener("keydown", handleKeyDown);
   }, [id, title, content, token, role, saving, loading]);
 
-
-  const sendPendingUpdate = () => {
-    const pendingUpdate = pendingUpdateRef.current;
-
-    if(!pendingUpdate) return;
-
-    const socket = socketRef.current;
-
-    if(!socket?.connected || !isJoinedRef.current) {
-      console.log("Socket is not ready. Update remains pending. ");
-      return;
-    }
-
-    pendingUpdateRef.current = null;
-
-    console.log("Sending update:", pendingUpdate.content);
-
-    socket.emit("document-update", pendingUpdate, (response) => {
-      if(!response.success) {
-        console.log("Document update failed:", response.message);
-      } else {
-        console.log("Document saved successfully");
-      }
-    })
-  }
-
-  const flushPendingUpdate = () => {
-    if(debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-    sendPendingUpdate();
-  }
 
   return (
     <>
@@ -454,13 +567,13 @@ export default function RichTextEditor() {
 
             <div className="document-editor">
               <ReactQuill
+                ref={quillRef}
                 theme="snow"
-                value={content}
+                defaultValue={content}
                 onChange={handleContentChange}
-                onBlur={flushPendingUpdate}
                 modules={modules}
                 formats={formats}
-                readOnly={role === "viewer"}
+                readOnly={role === "viewer" || Boolean(id && yjsSyncedDocumentId !== id)}
                 placeholder="Type here... Press Ctrl+S to save changes."
               />
             </div>

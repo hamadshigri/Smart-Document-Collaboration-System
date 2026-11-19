@@ -307,3 +307,69 @@
     transform: translateX(0);
   }
 }
+
+@page {
+  margin: 18mm;
+}
+
+@media print {
+  html,
+  body {
+    width: auto !important;
+    min-width: 0 !important;
+    background: #fff !important;
+  }
+
+  .document-container {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .document-header,
+  .document-error,
+  .document-editor .ql-toolbar,
+  .fixed,
+  .Toastify {
+    display: none !important;
+  }
+
+  .document-editor,
+  .document-editor .ql-container.ql-snow,
+  .document-editor .ql-editor {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .document-editor .ql-editor.ql-blank::before {
+    display: none !important;
+  }
+
+  .document-editor .ql-editor h1,
+  .document-editor .ql-editor h2,
+  .document-editor .ql-editor h3 {
+    break-after: avoid-page;
+  }
+
+  .document-editor .ql-editor p,
+  .document-editor .ql-editor li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .document-editor .ql-editor img,
+  .document-editor .ql-editor table,
+  .document-editor .ql-editor pre,
+  .document-editor .ql-editor blockquote {
+    max-width: 100% !important;
+    break-inside: avoid-page;
+  }
+}

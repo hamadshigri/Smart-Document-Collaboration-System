@@ -19,6 +19,7 @@ import * as Y from "yjs";
 import { QuillBinding } from "y-quill";
 import { getDocumentAbout } from "../lib/documentShare";
 import { LuUsers } from "react-icons/lu";
+import { FiPrinter } from "react-icons/fi";
 
 
 
@@ -588,6 +589,17 @@ export default function RichTextEditor() {
                     <LuUsers className="cursor-pointer text-2xl" />
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="text-gray-700 hover:text-[#3186FF]"
+                  aria-label="Print document"
+                  title="Print document"
+                  disabled={loading || !content}
+                >
+                  <FiPrinter className="cursor-pointer text-2xl" />
+                </button>
 
                 {id && role === "owner" && (
                   <FaShareFromSquare

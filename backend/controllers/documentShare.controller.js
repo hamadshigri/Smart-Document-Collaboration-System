@@ -78,6 +78,7 @@ export const createDocumentInvitation = async (req, res) => {
     try {
       await sendInvitationEmail({
         inviteeEmail,
+        owner: owner.name,
         documentTitle: document.title,
         role,
         invitationId: invitation._id,

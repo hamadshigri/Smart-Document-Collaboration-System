@@ -91,7 +91,6 @@ const Home = () => {
                 setSearchTerm={setSearchTerm}
             />
 
-            {/* Start a new document */}
             <div className="flex justify-center bg-[#F0F4F9]">
                 <div className="w-full max-w-[900px] py-4">
                     <h3 className="mb-4 font-normal">
@@ -133,6 +132,8 @@ const Home = () => {
                                     title={d.title}
                                     content={d.content}
                                     createdAt={d.createdAt}
+                                    updatedAt={d.updatedAt}
+                                    role={d.role}
                                     onDelete={handleDelete}
                                 />
                             ))

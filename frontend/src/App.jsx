@@ -29,7 +29,6 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const AppRoutes = () => {
-  // Subscribe to router changes so auth is re-read after login/logout navigation.
   useLocation();
 
   const token = localStorage.getItem("token");

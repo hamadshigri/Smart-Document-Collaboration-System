@@ -107,7 +107,7 @@ const InvitationPage = () => {
         <div className="max-w-lg w-full border rounded-xl shadow-sm p-8">
           <h1 className="text-2xl font-bold mb-3">Document Invitation</h1>
           <p className="text-gray-500 mb-6">
-            You have received an invitation to access the following document.
+            You have received an invitation from {invitation.owner?.name} to access the following document. 
           </p>
 
           <div className="bg-gray-100 rounded-lg p-5 space-y-3">

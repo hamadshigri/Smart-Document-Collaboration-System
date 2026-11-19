@@ -10,13 +10,16 @@ import {
   updateDocument,
 } from "../lib/document";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { IoArrowBack } from "react-icons/io5";
+import { IoArrowBack, IoClose } from "react-icons/io5";
 import { toast } from "react-toastify";
 import ShareModal from "./ShareModal";
 import { FaShareFromSquare } from "react-icons/fa6";
 import { createSocketConnection } from "../socket/socket";
 import * as Y from "yjs";
 import { QuillBinding } from "y-quill";
+import { getDocumentAbout } from "../lib/documentShare";
+import { LuUsers } from "react-icons/lu";
+
 
 
 const SizeStyle = Quill.import("attributors/style/size");
@@ -69,6 +72,10 @@ export default function RichTextEditor() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showPeoplePanel, setShowPeoplePanel] = useState(false);
+  const [peopleLoading, setPeopleLoading] = useState(false);
+  const [sharedPeople, setSharedPeople] = useState([]);
+  const [peopleError, setPeopleError] = useState("");
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
@@ -97,6 +104,24 @@ export default function RichTextEditor() {
   const addNotify = () => toast("Document Saved!");
   const emptyNotify = () =>
     toast("Please add text in the title or content");
+
+  const handleShowPeople = async () => {
+    if (!id) return;
+    setShowPeoplePanel(true);
+    setPeopleLoading(true);
+    setPeopleError("");
+
+    try {
+      const response = await getDocumentAbout(id, token);
+      setSharedPeople(response.data.about.sharedWith || []);
+    } catch (requestError) {
+      setPeopleError(
+        requestError.response?.data?.message || requestError.message || "Could not load shared people.",
+      );
+    } finally {
+      setPeopleLoading(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -305,8 +330,7 @@ export default function RichTextEditor() {
     const ydoc = ydocRef.current;
     const ytext = ytextRef.current;
 
-    // Unsaved documents have no server session yet, so seed their local Yjs
-    // text from Quill. Saved documents are seeded by the first socket editor.
+
     if (!id && ytext.length === 0) {
       ydoc.transact(() => ytext.applyDelta(quill.getContents().ops), "initial-local-content");
     }
@@ -553,12 +577,24 @@ export default function RichTextEditor() {
               </div>
 
               <div className="flex items-center gap-3">
+                {id && (
+                  <button
+                    type="button"
+                    onClick={handleShowPeople}
+                    className="text-gray-700 hover:text-[#3186FF]"
+                    aria-label="Show shared people"
+                    title="Show shared people"
+                  >
+                    <LuUsers className="cursor-pointer text-2xl" />
+                  </button>
+                )}
+
                 {id && role === "owner" && (
                   <FaShareFromSquare
                     onClick={() =>
                       setShowShareModal(true)
                     }
-                    className="cursor-pointer text-2xl"
+                    className="cursor-pointer text-2xl hover:text-[#3186FF]"
                   />
                 )}
 
@@ -603,6 +639,65 @@ export default function RichTextEditor() {
                   setShowShareModal(false)
                 }
               />
+            )}
+
+            {showPeoplePanel && id && (
+              <div className="fixed inset-0 z-[100]">
+                <button
+                  type="button"
+                  className="absolute inset-0 bg-black/30"
+                  aria-label="Close shared people panel"
+                  onClick={() => setShowPeoplePanel(false)}
+                />
+                <aside
+                  className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-white shadow-2xl"
+                  style={{ animation: "slideInFromRight 280ms ease-out" }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Shared people"
+                >
+                  <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {role === "owner" ? "Shared with" : "Document owner"}
+                      </h2>
+                      <p className="mt-0.5 truncate text-sm text-gray-500">{title}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPeoplePanel(false)}
+                      className="rounded-full p-2 cursor-pointer text-gray-500 hover:bg-gray-100"
+                      aria-label="Close panel"
+                    >
+                      <IoClose size={22} />
+                    </button>
+                  </header>
+                  <div className="flex-1 overflow-y-auto p-5">
+                    {peopleLoading ? (
+                      <p className="text-sm text-gray-500">Loading people...</p>
+                    ) : peopleError ? (
+                      <p className="text-sm text-red-600">{peopleError}</p>
+                    ) : sharedPeople.length ? (
+                      <ul className="space-y-3">
+                        {sharedPeople.map((person, index) => (
+                          <li key={`${person.email || person.name}-${index}`} className="flex items-start gap-3 rounded-lg border border-gray-200 p-3">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+                              {(person.name || person.email || "?").charAt(0).toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-medium text-gray-900">{person.name || person.email}</span>
+                              {person.email && <span className="block truncate text-xs text-gray-500">{person.email}</span>}
+                              <span className="mt-1 block text-xs capitalize text-gray-500">{person.status === "owner" ? "Owner" : `${person.role} / ${person.status}`}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500">No shared people yet.</p>
+                    )}
+                  </div>
+                </aside>
+              </div>
             )}
           </>
         )}

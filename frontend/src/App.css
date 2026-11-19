@@ -299,3 +299,11 @@
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before {
   content: "32px";
 }
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

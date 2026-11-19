@@ -48,3 +48,13 @@ export function rejectInvitation(invitationId, token) {
     }
   );
 }
+
+
+export function getDocumentAbout(documentId, token) {
+  return axios.get(`${BASE_URL}/document/${documentId}/shares`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+}

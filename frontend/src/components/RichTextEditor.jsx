@@ -615,7 +615,7 @@ export default function RichTextEditor() {
                 {id && role !== "viewer" && (
                   <Button
                     name={
-                      saving ? "Updating..." : "Update"
+                      saving ? "Saving..." : "Save"
                     }
                     disabled={saving || loading}
                     onClick={handleUpdate}

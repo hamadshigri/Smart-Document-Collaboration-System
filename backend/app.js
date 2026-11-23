@@ -9,10 +9,29 @@ import documentShareRoutes from "./routes/documentShare.route.js";
 
 const app = express();
 
+const allowedOrigins = new Set([
+  "https://google-docs-three-mu.vercel.app",
+  process.env.FRONTEND_URL?.trim().replace(/\/$/, ""),
+  "http://localhost:5173",
+  "http://localhost:5137",
+].filter(Boolean));
+
+app.use(cors({
+  origin(origin, callback) {
+    // Allow non-browser clients and the explicitly listed frontend origins.
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked origin: ${origin}`));
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(cors());
 
 
 app.use(async (req, res, next) => {

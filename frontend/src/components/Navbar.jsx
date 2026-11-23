@@ -2,7 +2,6 @@ import { IoMdSearch } from "react-icons/io";
 import Button from "./Button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { FaUserCircle } from "react-icons/fa";
 import { FiChevronDown, FiKey, FiLogOut, FiMail } from "react-icons/fi";
 
 const Navbar = ({ isLoggedIn, setSearchTerm, hideLoginButton = false }) => {
@@ -15,6 +14,7 @@ const Navbar = ({ isLoggedIn, setSearchTerm, hideLoginButton = false }) => {
         name: localStorage.getItem("userName") || "",
         email: localStorage.getItem("userEmail") || "",
     };
+    const profileInitial = (profile.name.trim()[0] || profile.email.trim()[0] || "U").toUpperCase();
 
     useEffect(() => {
         const closeOnOutsideClick = (event) => {
@@ -74,7 +74,9 @@ const Navbar = ({ isLoggedIn, setSearchTerm, hideLoginButton = false }) => {
                         <button type="button" aria-label="Open profile menu" aria-expanded={menuOpen}
                             onClick={() => setMenuOpen((open) => !open)}
                             className="flex items-center gap-2 cursor-pointer rounded-full p-2 text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <FaUserCircle className="h-7 w-7 text-blue-600" />
+                            <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+                                {profileInitial}
+                            </span>
                             <span className="max-w-28 truncate text-sm font-medium">{profile.name || "Profile"}</span>
                             <FiChevronDown className="h-4 w-4" />
                         </button>

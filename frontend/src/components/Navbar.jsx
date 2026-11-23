@@ -59,6 +59,8 @@ const Navbar = ({ isLoggedIn, setSearchTerm, hideLoginButton = false }) => {
                     <div className="group flex max-w-2xl flex-1 items-center rounded-full border border-transparent bg-[#F0F4F9] px-4 transition-all duration-200 focus-within:border-slate-300/80 focus-within:bg-white focus-within:shadow-md focus-within:shadow-slate-200/50">
                         <IoMdSearch className="h-5 w-5 shrink-0 text-slate-500 transition-colors duration-200 group-focus-within:text-blue-600" />
                         <input
+                            id="document-search"
+                            name="search"
                             type="text"
                             onChange={(e) => setSearchTerm?.(e.target.value)}
                             placeholder="Search"

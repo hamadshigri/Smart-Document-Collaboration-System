@@ -11,18 +11,9 @@ import documentShareRoutes from "./routes/documentShare.route.js";
 
 const app = express();
 
-const allowedOrigins = new Set([
-  "https://google-docs-three-mu.vercel.app",
-  process.env.FRONTEND_URL?.trim().replace(/\/$/, ""),
-  "http://localhost:5173",
-  "http://localhost:5137",
-].filter(Boolean));
-
 const corsOptions = {
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
-    return callback(new Error(`CORS blocked origin: ${origin}`));
-  },
+  // Reflect the requesting site. API access is still protected by JWT auth.
+  origin: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 204,

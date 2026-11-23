@@ -41,10 +41,12 @@ const Register = () => {
                 <HeroText />
                 <div className="page-enter-right max-w-[500px] w-full">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center border border-gray-400 rounded-md p-8">
-                        <input type="text" ref={nameRef} placeholder="Enter your name" className="rounded border border-gray-500 p-2" />
-                        <input type="email" ref={emailRef} placeholder="Enter your email" className="rounded border border-gray-500 p-2" />
+                        <input id="register-name" name="name" type="text" ref={nameRef} placeholder="Enter your name" className="rounded border border-gray-500 p-2" />
+                        <input id="register-email" name="email" type="email" ref={emailRef} placeholder="Enter your email" className="rounded border border-gray-500 p-2" />
                         <div className="flex justify-between rounded border border-gray-500 pr-1">
                             <input
+                                id="register-password"
+                                name="password"
                                 type={showPassword ? "text" : "password"}
                                 ref={passwordRef}
                                 placeholder="Enter your password"

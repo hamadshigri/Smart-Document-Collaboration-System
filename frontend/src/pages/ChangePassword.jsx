@@ -33,8 +33,8 @@ export default function ChangePassword() {
     <main className="mx-auto mt-12 max-w-md p-4">
         <h1 className="mb-4 text-2xl font-semibold">Change password</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
-            <input type="password" autoComplete="current-password" required placeholder="Current password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="rounded border p-3" /> 
-            <input type="password" autoComplete="new-password" minLength={8} required placeholder="New password (at least 8 characters)" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="rounded border p-3" />
+            <input id="current-password" name="currentPassword" type="password" autoComplete="current-password" required placeholder="Current password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="rounded border p-3" />
+            <input id="new-password" name="newPassword" type="password" autoComplete="new-password" minLength={8} required placeholder="New password (at least 8 characters)" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="rounded border p-3" />
             <button disabled={busy} className="rounded bg-blue-600 p-3 text-white">{busy? "Saving..." : "Save new password"}</button>
         </form>
         <Link to="/" className="mt-4 inline-block text-blue-600">Cancel</Link>

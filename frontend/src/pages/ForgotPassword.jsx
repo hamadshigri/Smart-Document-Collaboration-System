@@ -32,6 +32,8 @@ export default function ForgotPassword() {
         </p>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <input
+            id="forgot-email"
+            name="email"
             type="email"
             required
             autoComplete="email"

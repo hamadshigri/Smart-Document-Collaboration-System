@@ -567,6 +567,8 @@ export default function RichTextEditor() {
                 </Link>
 
                 <input
+                  id="document-title"
+                  name="title"
                   className="document-title"
                   value={title}
                   onChange={(e) =>

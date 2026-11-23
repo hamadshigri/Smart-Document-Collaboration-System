@@ -74,6 +74,8 @@ const Login = () => {
                         className="flex flex-col gap-4 justify-center p-8 border-l border-solid border-blue-500"
                     >
                         <input
+                            id="login-email"
+                            name="email"
                             type="email"
                             ref={emailRef}
                             required
@@ -83,6 +85,8 @@ const Login = () => {
 
                         <div className="flex justify-between rounded border border-gray-500 pr-1">
                         <input
+                            id="login-password"
+                            name="password"
                             type={showPassword ? 'text' : 'password'}
                             ref={passwordRef}
                             required

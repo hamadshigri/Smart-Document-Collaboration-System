@@ -32,6 +32,8 @@ export default function ResetPassword() {
         <h1 className="mb-4 text-2xl font-semibold">Choose a new password</h1>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <input
+            id="reset-new-password"
+            name="newPassword"
             type="password"
             autoComplete="new-password"
             minLength={8}

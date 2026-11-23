@@ -73,6 +73,8 @@ const ShareModal = ({ documentId, onClose }) => {
             </label>
 
             <input
+              id="invite-email"
+              name="email"
               type="email"
               required
               value={email}
@@ -88,6 +90,8 @@ const ShareModal = ({ documentId, onClose }) => {
             </label>
 
             <select
+              id="invite-role"
+              name="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full border border-gray-300 rounded-lg p-3 outline-none"

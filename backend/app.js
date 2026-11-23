@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import cors from "cors";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { connectDB } from "./config/db.js";
 import documentRoutes from "./routes/document.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -16,16 +18,18 @@ const allowedOrigins = new Set([
   "http://localhost:5137",
 ].filter(Boolean));
 
-app.use(cors({
+const corsOptions = {
   origin(origin, callback) {
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked origin: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  optionsSuccessStatus: 204,
+};
 
-}));
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
@@ -55,12 +59,10 @@ app.get("/", (req, res) => {
   res.send("homepage");
 });
 
-
-// if (process.env.VERCEL !== "1") {
-//   const PORT = process.env.PORT || 3000;
-//   app.listen(PORT, () => {
-//     console.log(`server is listening on port ${PORT}`);
-//   });
-// }
-
 export default app;
+
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`API server running on port ${PORT}`));
+}

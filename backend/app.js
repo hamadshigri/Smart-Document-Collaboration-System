@@ -18,12 +18,13 @@ const allowedOrigins = new Set([
 
 app.use(cors({
   origin(origin, callback) {
-    // Allow non-browser clients and the explicitly listed frontend origins.
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked origin: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+
 }));
 
 app.get("/health", (req, res) => {

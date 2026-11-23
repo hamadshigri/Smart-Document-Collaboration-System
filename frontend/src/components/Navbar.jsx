@@ -89,10 +89,6 @@ const Navbar = ({ isLoggedIn, setSearchTerm, hideLoginButton = false }) => {
                                     className="flex w-full items-center cursor-pointer gap-3 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
                                     <FiKey className="h-4 w-4" /> Change password
                                 </button>
-                                <button type="button" onClick={() => { setMenuOpen(false); navigate("/forgot-password"); }}
-                                    className="flex w-full items-center cursor-pointer gap-3 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
-                                    <FiMail className="h-4 w-4" /> Forgot password
-                                </button>
                                 <button type="button" onClick={logout}
                                     className="flex w-full items-center cursor-pointer gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50">
                                     <FiLogOut className="h-4 w-4" /> Log out

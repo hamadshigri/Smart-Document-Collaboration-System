@@ -359,7 +359,8 @@
 }
 
 @page {
-  margin: 18mm;
+  /* Zero page margin suppresses browser-generated print headers and footers. */
+  margin: 5mm;
 }
 
 @media print {
@@ -372,7 +373,7 @@
 
   .document-container {
     min-height: 0 !important;
-    padding: 0 !important;
+    padding: 18mm 16mm !important;
     background: #fff !important;
   }
 

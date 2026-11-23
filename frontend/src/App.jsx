@@ -4,6 +4,9 @@ import Document from "./pages/Document";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import InvitationPage from "./pages/InvitationPage";
+import ChangePassword from "./pages/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 
 const isTokenExpired = (token) => {
@@ -38,7 +41,10 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/register" element={isAuth ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/login" element={isAuth ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
       <Route path="/document" element={<ProtectedRoute><Document /></ProtectedRoute>} />
       <Route path="/document/:id" element={<ProtectedRoute><Document /></ProtectedRoute>} />
       <Route path="/invitations/:id" element={<ProtectedRoute><InvitationPage /></ProtectedRoute>} />

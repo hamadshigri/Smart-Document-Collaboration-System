@@ -74,3 +74,36 @@ export const sendInvitationEmail = async ({
 
   return result;
 };
+
+
+export const sendPasswordResetEmail = async({email, resetToken}) => {
+  const configuredFrontendUrl = (process.env.FRONTEND_URL || "").trim().replace(/\/$/, "");
+  const frontendUrl = configuredFrontendUrl || "https://google-docs-three-mu.vercel.app";
+  const resetLink = `${frontendUrl}/reset-password/${encodeURIComponent(resetToken)}`;
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "api-key": process.env.BREVO_API_KEY,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: {
+        email: process.env.BREVO_SENDER_EMAIL,
+        name: process.env.BREVO_SENDER_NAME || "Docs Workspace",
+      },
+      to: [{ email }],
+      subject: "Reset your Docs password",
+      htmlContent: `
+      <p>We received a request to reset your password.</p>
+      <p><a href="${resetLink}">Choose a new password</a></p>
+      <p>This link expires in 15 minutes. If you did not request this, you can ignore this email.</p>
+      `
+    })
+  })
+  if(!response.ok) {
+  const result = await response.text();
+  throw new Error( `Brevo API error ${response.status}: ${result}`);
+}
+}

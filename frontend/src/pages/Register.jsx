@@ -39,7 +39,7 @@ const Register = () => {
             <Navbar />
             <div className="flex justify-center items-center h-[80vh] gap-4">
                 <HeroText />
-                <div className="max-w-[500px] w-full">
+                <div className="page-enter-right max-w-[500px] w-full">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4 justify-center border border-gray-400 rounded-md p-8">
                         <input type="text" ref={nameRef} placeholder="Enter your name" className="rounded border border-gray-500 p-2" />
                         <input type="email" ref={emailRef} placeholder="Enter your email" className="rounded border border-gray-500 p-2" />

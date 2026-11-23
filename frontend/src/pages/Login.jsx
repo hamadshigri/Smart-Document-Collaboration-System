@@ -32,6 +32,8 @@ const Login = () => {
             const response = await login({ email, password });
 
             localStorage.setItem("token", response.data.token);
+            localStorage.setItem("userName", response.data.user?.name || "");
+            localStorage.setItem("userEmail", response.data.user?.email || email);
 
             toast.success("User logged in successfully!");
 
@@ -66,7 +68,7 @@ const Login = () => {
             <div className="flex justify-center items-center h-[70vh] gap-4">
                 <HeroText />
 
-                <div className="max-w-[500px] w-full">
+                <div className="page-enter-right max-w-[500px] w-full">
                     <form
                         onSubmit={handleSubmit}
                         className="flex flex-col gap-4 justify-center p-8 border-l border-solid border-blue-500"
@@ -103,6 +105,10 @@ const Login = () => {
                         >
                             {isSubmitting ? "Logging in..." : "Login"}
                         </button>
+
+                        <Link to="/forgot-password" className="text-center text-sm text-[#3186FF] hover:underline">
+                            Forgot password?
+                        </Link>
 
                         <p className="text-center">
                             Don't have an Account?{" "}
